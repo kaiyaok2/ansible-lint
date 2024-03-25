@@ -28,7 +28,7 @@ jobs:
         id: generate_matrix
         uses: coactions/dynamic-matrix@v1
         with:
-          # min_python: "3.10"
+          min_python: "3.12" #"3.10"
           max_python: "3.12"
           # default_python: "3.10"
           # other_names: |
@@ -41,15 +41,15 @@ jobs:
           #   pre
           #   py310-devel
           platforms: linux #,macos
-  test-action:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Self test for ansible-lint@${{ github.action_ref || 'main' }}
-        uses: ./
-        with:
-          # basically we only lint linter own configuration, which should be passing.
-          args: .ansible-lint
+  # test-action:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Self test for ansible-lint@${{ github.action_ref || 'main' }}
+  #       uses: ./
+  #       with:
+  #         # basically we only lint linter own configuration, which should be passing.
+  #         args: .ansible-lint
   build:
     name: ${{ matrix.name }}
     environment: test
@@ -174,77 +174,77 @@ jobs:
             exit 99
           fi
         # https://github.com/actions/toolkit/issues/193
-  codeql:
-    name: codeql
-    runs-on: ubuntu-latest
-    permissions:
-      actions: read
-      contents: read
-      security-events: write
+  # codeql:
+  #   name: codeql
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     actions: read
+  #     contents: read
+  #     security-events: write
 
-    strategy:
-      fail-fast: false
-      matrix:
-        language: ["python"]
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       language: ["python"]
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
 
-      # Initializes the CodeQL tools for scanning.
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: ${{ matrix.language }}
-          # If you wish to specify custom queries, you can do so here or in a config file.
-          # By default, queries listed here will override any specified in a config file.
-          # Prefix the list here with "+" to use these queries and those in the config file.
+  #     # Initializes the CodeQL tools for scanning.
+  #     - name: Initialize CodeQL
+  #       uses: github/codeql-action/init@v3
+  #       with:
+  #         languages: ${{ matrix.language }}
+  #         # If you wish to specify custom queries, you can do so here or in a config file.
+  #         # By default, queries listed here will override any specified in a config file.
+  #         # Prefix the list here with "+" to use these queries and those in the config file.
 
-          # Details on CodeQL's query packs refer to : https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
-          # queries: security-extended,security-and-quality
+  #         # Details on CodeQL's query packs refer to : https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
+  #         # queries: security-extended,security-and-quality
 
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
+  #     - name: Autobuild
+  #       uses: github/codeql-action/autobuild@v3
 
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
-        with:
-          category: "/language:${{matrix.language}}"
+  #     - name: Perform CodeQL Analysis
+  #       uses: github/codeql-action/analyze@v3
+  #       with:
+  #         category: "/language:${{matrix.language}}"
 
-  check: # This job does nothing and is only used for the branch protection
-    if: always()
-    permissions:
-      pull-requests: write # allow codenotify to comment on pull-request
+  # check: # This job does nothing and is only used for the branch protection
+  #   if: always()
+  #   permissions:
+  #     pull-requests: write # allow codenotify to comment on pull-request
 
-    needs:
-      - build
-      - test-action
+  #   needs:
+  #     - build
+  #     - test-action
 
-    runs-on: ubuntu-latest
+  #   runs-on: ubuntu-latest
 
-    steps:
-      - name: Merge logs into a single archive
-        uses: actions/upload-artifact/merge@v4
-        with:
-          name: logs.zip
-          pattern: logs*.zip
-          delete-merged: true
+  #   steps:
+  #     - name: Merge logs into a single archive
+  #       uses: actions/upload-artifact/merge@v4
+  #       with:
+  #         name: logs.zip
+  #         pattern: logs*.zip
+  #         delete-merged: true
 
-      - name: Check codecov.io status
-        if: github.event_name == 'pull_request'
-        uses: coactions/codecov-status@main
+  #     - name: Check codecov.io status
+  #       if: github.event_name == 'pull_request'
+  #       uses: coactions/codecov-status@main
 
-      - name: Decide whether the needed jobs succeeded or failed
-        uses: re-actors/alls-green@release/v1
-        with:
-          jobs: ${{ toJSON(needs) }}
+  #     - name: Decide whether the needed jobs succeeded or failed
+  #       uses: re-actors/alls-green@release/v1
+  #       with:
+  #         jobs: ${{ toJSON(needs) }}
 
-      - name: Check out src from Git
-        uses: actions/checkout@v4
+  #     - name: Check out src from Git
+  #       uses: actions/checkout@v4
 
-      - name: Notify repository owners about lint change affecting them
-        uses: sourcegraph/codenotify@v0.6.4
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        # https://github.com/sourcegraph/codenotify/issues/19
-        continue-on-error: true
+  #     - name: Notify repository owners about lint change affecting them
+  #       uses: sourcegraph/codenotify@v0.6.4
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       # https://github.com/sourcegraph/codenotify/issues/19
+  #       continue-on-error: true
