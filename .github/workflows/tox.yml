@@ -66,9 +66,9 @@ jobs:
             os: "ubuntu-22.04"
             passed_name: "py312"
     environment: test
-    runs-on: ${{ matrix.os || 'ubuntu-22.04' }}
-    needs:
-      - prepare
+    # runs-on: ${{ matrix.os || 'ubuntu-22.04' }}
+    # needs:
+    #   - prepare
     defaults:
       run:
         shell: ${{ matrix.shell || 'bash'}}
