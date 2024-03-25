@@ -61,13 +61,12 @@ jobs:
     #     shell: ${{ matrix.shell || 'bash'}}
     strategy:
       fail-fast: false
-      strategy:
-        matrix:
-          config:
-            - name: "py312"
-              python_version: "3.12"
-              os: "ubuntu-22.04"
-              passed_name: "py312"
+      matrix:
+        config:
+          - name: "py312"
+            python_version: "3.12"
+            os: "ubuntu-22.04"
+            passed_name: "py312"
       # max-parallel: 5
       # The matrix testing goal is to cover the *most likely* environments
       # which are expected to be used by users in production. Avoid adding a
