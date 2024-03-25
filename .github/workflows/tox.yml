@@ -28,19 +28,19 @@ jobs:
         id: generate_matrix
         uses: coactions/dynamic-matrix@v1
         with:
-          min_python: "3.10"
+          # min_python: "3.10"
           max_python: "3.12"
-          default_python: "3.10"
-          other_names: |
-            lint
-            pkg
-            hook
-            docs
-            schemas
-            eco
-            pre
-            py310-devel
-          platforms: linux,macos
+          # default_python: "3.10"
+          # other_names: |
+          #   lint
+          #   pkg
+          #   hook
+          #   docs
+          #   schemas
+          #   eco
+          #   pre
+          #   py310-devel
+          platforms: linux #,macos
   test-action:
     runs-on: ubuntu-latest
     steps:
@@ -124,10 +124,25 @@ jobs:
       - name: Initialize tox envs ${{ matrix.passed_name }}
         run: python3 -m tox --notest --skip-missing-interpreters false -vv -e ${{ matrix.passed_name }}
         timeout-minutes: 5 # average is under 1, but macos can be over 3
+      - name: Restore pytest-ranking cache
+        id: restore-pytest-ranking-cache
+        if: always()
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ github.workspace }}/.tox/py312/.pytest_cache/v/pytest_ranking_data
+          key: pytest-ranking-cache-${{ runner.os }}-${{ matrix.python }}
 
       # sequential run improves browsing experience (almost no speed impact)
       - name: tox -e ${{ matrix.passed_name }}
         run: python3 -m tox -e ${{ matrix.passed_name }}
+
+      - name: Save pytest-ranking cache
+        id: save-pytest-ranking-cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ github.workspace }}/.tox/py312/.pytest_cache/v/pytest_ranking_data
+          key: pytest-ranking-cache-${{ runner.os }}-${{ matrix.python }}-${{ github.run_id }}
 
       - name: Combine coverage data
         if: ${{ startsWith(matrix.passed_name, 'py') }}
