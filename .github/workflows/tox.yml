@@ -18,19 +18,19 @@ env:
   PY_COLORS: 1
 
 jobs:
-  prepare:
-    name: prepare
-    runs-on: ubuntu-22.04
-    outputs:
-      matrix: ${{ steps.generate_matrix.outputs.matrix }}
-    steps:
-      - name: Determine matrix
-        id: generate_matrix
-        uses: coactions/dynamic-matrix@v1
-        with:
-          # min_python: "3.12" #"3.10"
-          # max_python: "3.12"
-          default_python: "3.12"
+  # prepare:
+  #   name: prepare
+  #   runs-on: ubuntu-22.04
+  #   outputs:
+  #     matrix: ${{ steps.generate_matrix.outputs.matrix }}
+  #   steps:
+  #     - name: Determine matrix
+  #       id: generate_matrix
+  #       uses: coactions/dynamic-matrix@v1
+  #       with:
+  #         min_python: "3.12" #"3.10"
+  #         max_python: "3.12"
+  #         default_python: "3.12"
           # other_names: |
           #   lint
           #   pkg
@@ -53,7 +53,7 @@ jobs:
   build:
     name: "py312"
     environment: test
-    runs-on: ${{ matrix.os || 'ubuntu-22.04' }}
+    runs-on: "ubuntu-22.04"
     needs:
       - prepare
     # defaults:
@@ -61,7 +61,13 @@ jobs:
     #     shell: ${{ matrix.shell || 'bash'}}
     strategy:
       fail-fast: false
-      matrix: ${{ fromJson(needs.prepare.outputs.matrix) }}
+      strategy:
+        matrix:
+          config:
+            - name: "py312"
+              python_version: "3.12"
+              os: "ubuntu-22.04"
+              passed_name: "py312"
       # max-parallel: 5
       # The matrix testing goal is to cover the *most likely* environments
       # which are expected to be used by users in production. Avoid adding a
@@ -97,12 +103,12 @@ jobs:
             ~/.ansible/roles
           key: py312-${{ hashFiles('tools/test-eco.sh', 'requirements.yml', 'examples/playbooks/collections/requirements.yml') }}
 
-      - name: Set up Python ${{ matrix.python_version || '3.10' }}
+      - name: Set up Python "3.12"
         if: "!contains(matrix.shell, 'wsl')"
         uses: actions/setup-python@v5
         with:
           cache: pip
-          python-version: ${{ matrix.python_version || '3.10' }}
+          python-version: "3.12"
 
       - uses: actions/setup-node@v4
         with:
