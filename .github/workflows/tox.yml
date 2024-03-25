@@ -21,7 +21,7 @@ jobs:
   prepare:
     name: prepare
     runs-on: ubuntu-22.04
-    outputs:
+    strategy:
       matrix:
         name: "py312",
         python_version: ["3.12"],
