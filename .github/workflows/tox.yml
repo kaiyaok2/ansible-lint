@@ -18,34 +18,34 @@ env:
   PY_COLORS: 1
 
 jobs:
-  prepare:
-    name: prepare
-    runs-on: ubuntu-22.04
-    strategy:
-      matrix:
-        config:
-          - name: "py312"
-            python_version: "3.12"
-            os: "ubuntu-22.04"
-            passed_name: "py312"
-    steps:
-      - name: Determine matrix
-        id: generate_matrix
-        uses: coactions/dynamic-matrix@v1
-        with:
-          min_python: "3.12" #"3.10"
-          max_python: "3.12"
-          # default_python: "3.10"
-          # other_names: |
-          #   lint
-          #   pkg
-          #   hook
-          #   docs
-          #   schemas
-          #   eco
-          #   pre
-          #   py310-devel
-          platforms: linux #,macos
+  # prepare:
+  #   name: prepare
+  #   runs-on: ubuntu-22.04
+  #   strategy:
+  #     matrix:
+  #       config:
+  #         - name: "py312"
+  #           python_version: "3.12"
+  #           os: "ubuntu-22.04"
+  #           passed_name: "py312"
+  #   steps:
+  #     - name: Determine matrix
+  #       id: generate_matrix
+  #       uses: coactions/dynamic-matrix@v1
+  #       with:
+  #         min_python: "3.12" #"3.10"
+  #         max_python: "3.12"
+  #         # default_python: "3.10"
+  #         # other_names: |
+  #         #   lint
+  #         #   pkg
+  #         #   hook
+  #         #   docs
+  #         #   schemas
+  #         #   eco
+  #         #   pre
+  #         #   py310-devel
+  #         platforms: linux #,macos
   # test-action:
   #   runs-on: ubuntu-latest
   #   steps:
@@ -56,7 +56,15 @@ jobs:
   #         # basically we only lint linter own configuration, which should be passing.
   #         args: .ansible-lint
   build:
-    name: ${{ matrix.name }}
+    name: test
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        config:
+          - name: "py312"
+            python_version: "3.12"
+            os: "ubuntu-22.04"
+            passed_name: "py312"
     environment: test
     runs-on: ${{ matrix.os || 'ubuntu-22.04' }}
     needs:
