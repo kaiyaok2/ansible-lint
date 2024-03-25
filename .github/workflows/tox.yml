@@ -23,10 +23,11 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        name: "py312",
-        python_version: ["3.12"],
-        os: "ubuntu-22.04",
-        passed_name: "py312"
+        config:
+          - name: "py312"
+            python_version: "3.12"
+            os: "ubuntu-22.04"
+            passed_name: "py312"
     steps:
       - name: Determine matrix
         id: generate_matrix
