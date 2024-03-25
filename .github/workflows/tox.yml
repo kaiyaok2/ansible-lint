@@ -18,34 +18,29 @@ env:
   PY_COLORS: 1
 
 jobs:
-  # prepare:
-  #   name: prepare
-  #   runs-on: ubuntu-22.04
-  #   strategy:
-  #     matrix:
-  #       config:
-  #         - name: "py312"
-  #           python_version: "3.12"
-  #           os: "ubuntu-22.04"
-  #           passed_name: "py312"
-  #   steps:
-  #     - name: Determine matrix
-  #       id: generate_matrix
-  #       uses: coactions/dynamic-matrix@v1
-  #       with:
-  #         min_python: "3.12" #"3.10"
-  #         max_python: "3.12"
-  #         # default_python: "3.10"
-  #         # other_names: |
-  #         #   lint
-  #         #   pkg
-  #         #   hook
-  #         #   docs
-  #         #   schemas
-  #         #   eco
-  #         #   pre
-  #         #   py310-devel
-  #         platforms: linux #,macos
+  prepare:
+    name: prepare
+    runs-on: ubuntu-22.04
+    outputs:
+      matrix: ${{ steps.generate_matrix.outputs.matrix }}
+    steps:
+      - name: Determine matrix
+        id: generate_matrix
+        uses: coactions/dynamic-matrix@v1
+        with:
+          min_python: "3.12" #"3.10"
+          max_python: "3.12"
+          # default_python: "3.10"
+          # other_names: |
+          #   lint
+          #   pkg
+          #   hook
+          #   docs
+          #   schemas
+          #   eco
+          #   pre
+          #   py310-devel
+          #platforms: linux #,macos
   # test-action:
   #   runs-on: ubuntu-latest
   #   steps:
@@ -56,26 +51,17 @@ jobs:
   #         # basically we only lint linter own configuration, which should be passing.
   #         args: .ansible-lint
   build:
-    name: test
-    runs-on: ubuntu-22.04
-    strategy:
-      fail-fast: false
-      matrix:
-        config:
-          - name: "py312"
-            python_version: "3.12"
-            os: "ubuntu-22.04"
-            passed_name: "py312"
+    name: ${{ matrix.name }}
     environment: test
-    # runs-on: ${{ matrix.os || 'ubuntu-22.04' }}
-    # needs:
-    #   - prepare
+    runs-on: ${{ matrix.os || 'ubuntu-22.04' }}
+    needs:
+      - prepare
     defaults:
       run:
         shell: ${{ matrix.shell || 'bash'}}
-    # strategy:
-    #   fail-fast: false
-    #   matrix: ${{ fromJson(needs.prepare.outputs.matrix) }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.prepare.outputs.matrix) }}
       # max-parallel: 5
       # The matrix testing goal is to cover the *most likely* environments
       # which are expected to be used by users in production. Avoid adding a
@@ -136,7 +122,7 @@ jobs:
         run: python3 -m pip freeze --all
 
       - name: Initialize tox envs ${{ matrix.passed_name }}
-        run: python3 -m tox --notest --skip-missing-interpreters false -vv
+        run: python3 -m tox --notest --skip-missing-interpreters false -vv -e ${{ matrix.passed_name }}
         timeout-minutes: 5 # average is under 1, but macos can be over 3
       - name: Restore pytest-ranking cache
         id: restore-pytest-ranking-cache
@@ -147,8 +133,8 @@ jobs:
           key: pytest-ranking-cache-${{ runner.os }}-${{ matrix.python }}
 
       # sequential run improves browsing experience (almost no speed impact)
-      - name: tox -e
-        run: python3 -m tox
+      - name: tox -e ${{ matrix.passed_name }}
+        run: python3 -m tox -e ${{ matrix.passed_name }}
 
       - name: Save pytest-ranking cache
         id: save-pytest-ranking-cache
@@ -158,35 +144,35 @@ jobs:
           path: ${{ github.workspace }}/.tox/py312/.pytest_cache/v/pytest_ranking_data
           key: pytest-ranking-cache-${{ runner.os }}-${{ matrix.python }}-${{ github.run_id }}
 
-      # - name: Combine coverage data
-      #   if: ${{ startsWith(matrix.passed_name, 'py') }}
-      #   # produce a single .coverage file at repo root
-      #   run: tox -e coverage
+      - name: Combine coverage data
+        if: ${{ startsWith(matrix.passed_name, 'py') }}
+        # produce a single .coverage file at repo root
+        run: tox -e coverage
 
-      # - name: Upload coverage data
-      #   if: ${{ startsWith(matrix.passed_name, 'py') }}
-      #   uses: codecov/codecov-action@v4
-      #   with:
-      #     name: ${{ matrix.passed_name }}
-      #     token: ${{ secrets.CODECOV_TOKEN }}
-      #     verbose: true # optional (default = false)
-      #     fail_ci_if_error: true
+      - name: Upload coverage data
+        if: ${{ startsWith(matrix.passed_name, 'py') }}
+        uses: codecov/codecov-action@v4
+        with:
+          name: ${{ matrix.passed_name }}
+          token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: true # optional (default = false)
+          fail_ci_if_error: true
 
-      # - name: Archive logs
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: logs-${{ matrix.name }}.zip
-      #     path: .tox/**/log/
+      - name: Archive logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-${{ matrix.name }}.zip
+          path: .tox/**/log/
 
-      # - name: Report failure if git reports dirty status
-      #   run: |
-      #     git checkout HEAD -- src/ansiblelint/schemas/__store__.json
-      #     if [[ -n $(git status -s) ]]; then
-      #       # shellcheck disable=SC2016
-      #       echo -n '::error file=git-status::'
-      #       printf '### Failed as git reported modified and/or untracked files\n```\n%s\n```\n' "$(git status -s)" | tee -a "$GITHUB_STEP_SUMMARY"
-      #       exit 99
-      #     fi
+      - name: Report failure if git reports dirty status
+        run: |
+          git checkout HEAD -- src/ansiblelint/schemas/__store__.json
+          if [[ -n $(git status -s) ]]; then
+            # shellcheck disable=SC2016
+            echo -n '::error file=git-status::'
+            printf '### Failed as git reported modified and/or untracked files\n```\n%s\n```\n' "$(git status -s)" | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 99
+          fi
         # https://github.com/actions/toolkit/issues/193
   # codeql:
   #   name: codeql
