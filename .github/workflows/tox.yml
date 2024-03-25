@@ -54,8 +54,8 @@ jobs:
     name: "py312"
     environment: test
     runs-on: "ubuntu-22.04"
-    needs:
-      - prepare
+    # needs:
+    #   - prepare
     # defaults:
     #   run:
     #     shell: ${{ matrix.shell || 'bash'}}
