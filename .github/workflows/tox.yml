@@ -22,7 +22,11 @@ jobs:
     name: prepare
     runs-on: ubuntu-22.04
     outputs:
-      matrix: ${{ steps.generate_matrix.outputs.matrix }}
+      matrix:
+        name: "py312",
+        python_version: ["3.12"],
+        os: "ubuntu-22.04",
+        passed_name: "py312"
     steps:
       - name: Determine matrix
         id: generate_matrix
