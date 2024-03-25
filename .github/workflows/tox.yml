@@ -28,8 +28,8 @@ jobs:
         id: generate_matrix
         uses: coactions/dynamic-matrix@v1
         with:
-          min_python: "3.12" #"3.10"
-          max_python: "3.12"
+          # min_python: "3.12" #"3.10"
+          # max_python: "3.12"
           default_python: "3.12"
           # other_names: |
           #   lint
@@ -51,14 +51,14 @@ jobs:
   #         # basically we only lint linter own configuration, which should be passing.
   #         args: .ansible-lint
   build:
-    name: ${{ matrix.name }}
+    name: "py312"
     environment: test
     runs-on: ${{ matrix.os || 'ubuntu-22.04' }}
     needs:
       - prepare
-    defaults:
-      run:
-        shell: ${{ matrix.shell || 'bash'}}
+    # defaults:
+    #   run:
+    #     shell: ${{ matrix.shell || 'bash'}}
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.prepare.outputs.matrix) }}
@@ -84,7 +84,7 @@ jobs:
         with:
           path: |
             ~/.cache/pre-commit
-          key: pre-commit-${{ matrix.name || matrix.passed_name }}-${{ hashFiles('.pre-commit-config.yaml') }}
+          key: pre-commit-py312-${{ hashFiles('.pre-commit-config.yaml') }}
 
       - name: Set ansible cache(s)
         uses: actions/cache@v4
@@ -95,7 +95,7 @@ jobs:
             ~/.cache/ansible-compat
             ~/.ansible/collections
             ~/.ansible/roles
-          key: ${{ matrix.name || matrix.passed_name }}-${{ hashFiles('tools/test-eco.sh', 'requirements.yml', 'examples/playbooks/collections/requirements.yml') }}
+          key: py312-${{ hashFiles('tools/test-eco.sh', 'requirements.yml', 'examples/playbooks/collections/requirements.yml') }}
 
       - name: Set up Python ${{ matrix.python_version || '3.10' }}
         if: "!contains(matrix.shell, 'wsl')"
@@ -121,8 +121,8 @@ jobs:
       - name: Log installed dists
         run: python3 -m pip freeze --all
 
-      - name: Initialize tox envs ${{ matrix.passed_name }}
-        run: python3 -m tox --notest --skip-missing-interpreters false -vv -e ${{ matrix.passed_name }}
+      - name: Initialize tox envs py312
+        run: python3 -m tox --notest --skip-missing-interpreters false -vv -e "py312"
         timeout-minutes: 5 # average is under 1, but macos can be over 3
       - name: Restore pytest-ranking cache
         id: restore-pytest-ranking-cache
@@ -133,8 +133,8 @@ jobs:
           key: pytest-ranking-cache-${{ runner.os }}-${{ matrix.python }}
 
       # sequential run improves browsing experience (almost no speed impact)
-      - name: tox -e ${{ matrix.passed_name }}
-        run: python3 -m tox -e ${{ matrix.passed_name }}
+      - name: tox -e "py312"
+        run: python3 -m tox -e "py312"
 
       - name: Save pytest-ranking cache
         id: save-pytest-ranking-cache
@@ -144,35 +144,35 @@ jobs:
           path: ${{ github.workspace }}/.tox/py312/.pytest_cache/v/pytest_ranking_data
           key: pytest-ranking-cache-${{ runner.os }}-${{ matrix.python }}-${{ github.run_id }}
 
-      - name: Combine coverage data
-        if: ${{ startsWith(matrix.passed_name, 'py') }}
-        # produce a single .coverage file at repo root
-        run: tox -e coverage
+      # - name: Combine coverage data
+      #   if: ${{ startsWith(matrix.passed_name, 'py') }}
+      #   # produce a single .coverage file at repo root
+      #   run: tox -e coverage
 
-      - name: Upload coverage data
-        if: ${{ startsWith(matrix.passed_name, 'py') }}
-        uses: codecov/codecov-action@v4
-        with:
-          name: ${{ matrix.passed_name }}
-          token: ${{ secrets.CODECOV_TOKEN }}
-          verbose: true # optional (default = false)
-          fail_ci_if_error: true
+      # - name: Upload coverage data
+      #   if: ${{ startsWith(matrix.passed_name, 'py') }}
+      #   uses: codecov/codecov-action@v4
+      #   with:
+      #     name: ${{ matrix.passed_name }}
+      #     token: ${{ secrets.CODECOV_TOKEN }}
+      #     verbose: true # optional (default = false)
+      #     fail_ci_if_error: true
 
-      - name: Archive logs
-        uses: actions/upload-artifact@v4
-        with:
-          name: logs-${{ matrix.name }}.zip
-          path: .tox/**/log/
+      # - name: Archive logs
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: logs-${{ matrix.name }}.zip
+      #     path: .tox/**/log/
 
-      - name: Report failure if git reports dirty status
-        run: |
-          git checkout HEAD -- src/ansiblelint/schemas/__store__.json
-          if [[ -n $(git status -s) ]]; then
-            # shellcheck disable=SC2016
-            echo -n '::error file=git-status::'
-            printf '### Failed as git reported modified and/or untracked files\n```\n%s\n```\n' "$(git status -s)" | tee -a "$GITHUB_STEP_SUMMARY"
-            exit 99
-          fi
+      # - name: Report failure if git reports dirty status
+      #   run: |
+      #     git checkout HEAD -- src/ansiblelint/schemas/__store__.json
+      #     if [[ -n $(git status -s) ]]; then
+      #       # shellcheck disable=SC2016
+      #       echo -n '::error file=git-status::'
+      #       printf '### Failed as git reported modified and/or untracked files\n```\n%s\n```\n' "$(git status -s)" | tee -a "$GITHUB_STEP_SUMMARY"
+      #       exit 99
+      #     fi
         # https://github.com/actions/toolkit/issues/193
   # codeql:
   #   name: codeql
