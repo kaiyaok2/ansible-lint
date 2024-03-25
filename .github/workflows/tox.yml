@@ -28,7 +28,9 @@ jobs:
         id: generate_matrix
         uses: coactions/dynamic-matrix@v1
         with:
-          python: "3.12"
+          min_python: "3.12" #"3.10"
+          max_python: "3.12"
+          # default_python: "3.10"
           # other_names: |
           #   lint
           #   pkg
@@ -95,12 +97,12 @@ jobs:
             ~/.ansible/roles
           key: ${{ matrix.name || matrix.passed_name }}-${{ hashFiles('tools/test-eco.sh', 'requirements.yml', 'examples/playbooks/collections/requirements.yml') }}
 
-      - name: Set up Python '3.12'
-        if: "!contains(matrix.shell, 'wsl')"
-        uses: actions/setup-python@v5
-        with:
-          cache: pip
-          python-version: '3.12'
+      # - name: Set up Python '3.12'
+      #   if: "!contains(matrix.shell, 'wsl')"
+      #   uses: actions/setup-python@v5
+      #   with:
+      #     cache: pip
+      #     python-version: '3.12'
 
       - uses: actions/setup-node@v4
         with:
