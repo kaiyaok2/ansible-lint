@@ -136,7 +136,7 @@ jobs:
         run: python3 -m pip freeze --all
 
       - name: Initialize tox envs ${{ matrix.passed_name }}
-        run: python3 -m tox --notest --skip-missing-interpreters false -vv -e py312
+        run: python3 -m tox --notest --skip-missing-interpreters false -vv
         timeout-minutes: 5 # average is under 1, but macos can be over 3
       - name: Restore pytest-ranking cache
         id: restore-pytest-ranking-cache
